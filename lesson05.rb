@@ -1,9 +1,11 @@
+# Updated By: Ernie Brodeur (ebrodeur@ujami.net) to use the more current ffi-opengl bindings.
+# HomePage:   https://github.com/erniebrodeur/nehe-ruby
+# Originaly by:
 # This code was created by Jeff Molofee '99 
 # Conversion to Ruby by Manolo Padron Martinez (manolopm@cip.es)
 
-require "opengl"
-require "glut"
-
+require "ffi-opengl"
+include FFI, GL, GLU, GLUT
 
 # A general OpenGL initialization function.  Sets all of the initial parameters
 
@@ -13,14 +15,14 @@ def InitGL(width, height) # We call this right after our OpenGL window
   glClearColor(0.0, 0.0, 0.0, 0.0) # This Will Clear The Background 
                                     # Color To Black
   glClearDepth(1.0)                # Enables Clearing Of The Depth Buffer
-  glDepthFunc(GL::LESS)            # The Type Of Depth Test To Do
-  glEnable(GL::DEPTH_TEST)         # Enables Depth Testing
-  glShadeModel(GL::SMOOTH)         # Enables Smooth Color Shading
-  glMatrixMode(GL::PROJECTION)
+  glDepthFunc(GL_LESS)            # The Type Of Depth Test To Do
+  glEnable(GL_DEPTH_TEST)         # Enables Depth Testing
+  glShadeModel(GL_SMOOTH)         # Enables Smooth Color Shading
+  glMatrixMode(GL_PROJECTION)
   glLoadIdentity()                 # Reset The Projection Matrix
   gluPerspective(45.0,Float(width)/Float(height),0.1,100.0) # Calculate The Aspect Ratio 
                                                # Of The Window
-  glMatrixMode(GL::MODELVIEW)
+  glMatrixMode(GL_MODELVIEW)
 end
 
 # The function called when our window is resized (which shouldn't happen, 
@@ -31,23 +33,23 @@ ReSizeGLScene = Proc.new {|width, height|
   end
   glViewport(0,0,width,height) # Reset The Current Viewport And
                                 # Perspective Transformation
-  glMatrixMode(GL::PROJECTION)
+  glMatrixMode(GL_PROJECTION)
   glLoadIdentity()
   gluPerspective(45.0,Float(width)/Float(height),0.1,100.0)
-  glMatrixMode(GL::MODELVIEW)
+  glMatrixMode(GL_MODELVIEW)
 }
 
 # The main drawing function. 
 DrawGLScene = Proc.new {
-  glClear(GL::COLOR_BUFFER_BIT | GL::DEPTH_BUFFER_BIT) # Clear The Screen And
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) # Clear The Screen And
                                           # The Depth Buffer
   glLoadIdentity()                       # Reset The View
   glTranslatef(-1.5, 0.0, -6.0)           # Move Left 1.5 Units And Into The 
                                           # Screen 6.0
-  glRotate($rtri,0.0,1.0,0.0)            # Rotate the triangle on the Y Axis
+  glRotatef($rtri,0.0,1.0,0.0)            # Rotate the triangle on the Y Axis
 
   # draw a triangle (in smooth coloring mode)
-  glBegin(GL::POLYGON)                   # start drawing a polygon
+  glBegin(GL_POLYGON)                   # start drawing a polygon
 
   # front face of pyramid
   glColor3f(  1.0, 0.0, 0.0)             # Set The Color To Red
@@ -86,9 +88,9 @@ DrawGLScene = Proc.new {
   glLoadIdentity()                       # make sure we're no longer rotated.
   glTranslatef(1.5,0.0,-7.0)              # Move Right 3 Units, and back into 
                                           # the screen 7.0
-  glRotate($rquad,1.0,1.0,1.0)           # Rotate the quad on the X Axis
+  glRotatef($rquad,1.0,1.0,1.0)           # Rotate the quad on the X Axis
   # draw a cube (6 quadrilateral)
-  glBegin(GL::QUADS)                     # start drawing the cube
+  glBegin(GL_QUADS)                     # start drawing the cube
 
   # top of cube
   glColor3f(0.0,1.0,0.0)               # Set The Color To Blue
@@ -162,16 +164,16 @@ $rtri=0.0
 $rquad=0.0
 
 #Initialize GLUT state - glut will take any command line arguments that pertain
-# to it or X Windows - look at its documentation at 
-# http://reality.sgi.com/mjk/spec3/spec3.html 
-glutInit
+glutInit(MemoryPointer.new(:int, 1).put_int(0, 0), 
+         MemoryPointer.new(:pointer, 1).put_pointer(0, nil))
+
 
 #Select type of Display mode:   
 # Double buffer 
 # RGBA color
 # Alpha components supported 
 # Depth buffer 
-glutInitDisplayMode(GLUT::RGBA|GLUT::DOUBLE|GLUT::ALPHA|GLUT::DEPTH)
+glutInitDisplayMode(GLUT_RGBA|GLUT_DOUBLE|GLUT_ALPHA|GLUT_DEPTH)
 
 # get a 640x480 window
 glutInitWindowSize(640,480)
@@ -184,9 +186,6 @@ $window=glutCreateWindow("Jeff Molofee's GL Code Tutorial ... NeHe '99")
 
 # Register the function to do all our OpenGL drawing.
 glutDisplayFunc(DrawGLScene)
-
-# Go fullscreen. This is as soon as possible.
-glutFullScreen()
 
 # Even if there are no events, redraw our gl scene.
 glutIdleFunc(DrawGLScene)
