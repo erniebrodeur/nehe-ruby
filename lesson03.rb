@@ -7,6 +7,8 @@
 require "ffi-opengl"
 include FFI, GL, GLU, GLUT
 
+# TODO: this global is a hack, I will find a better way later.
+@window = nil
 # A general OpenGL initialization function.  Sets all of the initial parameters
 
 def InitGL(width, height) # We call this right after our OpenGL window 
@@ -27,7 +29,7 @@ end
 
 # The function called when our window is resized (which shouldn't happen, 
 # because we're fullscreen) 
-ReSizeGLScene = Proc.new {|width, height|
+def ReSizeGLScene(width, height)
   if (height==0) # Prevent A Divide By Zero If The Window Is Too Small
     height=1
   end
@@ -37,10 +39,10 @@ ReSizeGLScene = Proc.new {|width, height|
   glLoadIdentity()
   gluPerspective(45.0,Float(width)/Float(height),0.1,100.0)
   glMatrixMode(GL_MODELVIEW)
-}
+end
 
 # The main drawing function. 
-DrawGLScene = Proc.new {
+def DrawGLScene 
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) # Clear The Screen And
                                           # The Depth Buffer
   glLoadIdentity()                       # Reset The View
@@ -71,60 +73,62 @@ DrawGLScene = Proc.new {
 
   # we need to swap the buffer to display our drawing.
   glutSwapBuffers();
-}
+end
 
 
 
 # The function called whenever a key is pressed.
-keyPressed = Proc.new {|key, x, y| 
+def keyPressed(key, x, y)
 
   # If escape is pressed, kill everything. 
   if (key == 27) 
     # shut down our window 
-    glutDestroyWindow($window)
+    glutDestroyWindow(@window)
     # exit the program...normal termination.
     exit(0)                   
   end
-}
+end
 
 
-#Initialize GLUT state - glut will take any command line arguments that pertain
-# to it or X Windows - look at its documentation at 
-# http://reality.sgi.com/mjk/spec3/spec3.html 
-glutInit(MemoryPointer.new(:int, 1).put_int(0, 0), 
-         MemoryPointer.new(:pointer, 1).put_pointer(0, nil))
+def init(string)
+  #Initialize GLUT state - glut will take any command line arguments that pertain
+  # to it or X Windows - look at its documentation at 
+  # http://reality.sgi.com/mjk/spec3/spec3.html 
+  glutInit(MemoryPointer.new(:int, 1).put_int(0, 0), 
+           MemoryPointer.new(:pointer, 1).put_pointer(0, nil))
+  # Double buffer 
+  # RGBA color
+  # Alpha components supported 
+  # Depth buffer 
+  glutInitDisplayMode(GLUT_RGBA|GLUT_DOUBLE|GLUT_ALPHA|GLUT_DEPTH)
 
+  # get a 640x480 window
+  glutInitWindowSize(640,480)
 
-#Select type of Display mode:   
-# Double buffer 
-# RGBA color
-# Alpha components supported 
-# Depth buffer 
-glutInitDisplayMode(GLUT_RGBA|GLUT_DOUBLE|GLUT_ALPHA|GLUT_DEPTH)
+  # the window starts at the upper left corner of the screen
+  glutInitWindowPosition(0,0)
 
-# get a 640x480 window
-glutInitWindowSize(640,480)
+  # Open a window
+  glutCreateWindow(string)
+end
 
-# the window starts at the upper left corner of the screen
-glutInitWindowPosition(0,0)
+def callbacks
+  # Register the function to do all our OpenGL drawing.
+  glutDisplayFunc(method(:DrawGLScene).to_proc)
 
-# Open a window
-$window=glutCreateWindow("Jeff Molofee's GL Code Tutorial ... NeHe '99")
+  # Even if there are no events, redraw our gl scene.
+  glutIdleFunc(method(:DrawGLScene).to_proc)
 
-# Register the function to do all our OpenGL drawing.
-glutDisplayFunc(DrawGLScene)
+  # Register the function called when our window is resized.
+  glutReshapeFunc(method(:ReSizeGLScene).to_proc)
 
-# Even if there are no events, redraw our gl scene.
-glutIdleFunc(DrawGLScene)
+  # Register the function called when the keyboard is pressed.
+  glutKeyboardFunc(method(:keyPressed).to_proc)
+end
 
-# Register the function called when our window is resized.
-glutReshapeFunc(ReSizeGLScene)
+if __FILE__ == $0
+  @window = init($0)
+  callbacks
+  glutMainLoop()
+end
 
-# Register the function called when the keyboard is pressed.
-glutKeyboardFunc(keyPressed)
-
-# Initialize our window.
-InitGL(640, 480)
-
-# Start Event Processing Engine
-glutMainLoop()
