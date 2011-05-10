@@ -38,7 +38,7 @@ def initGl
     glMatrixMode(GL_MODELVIEW)
 end
 
-def display
+def DrawGLScene
     # Clear the screen and the depth buffer
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)  
 
@@ -75,7 +75,7 @@ def display
     glutSwapBuffers
 end
 
-def reshape(w, h)
+def ReSizeGLScene(w, h)
     h = 1 if h == 0
     @width, @height = w,h
     glViewport(0, 0, @width, @height)              
@@ -86,7 +86,7 @@ def reshape(w, h)
     glMatrixMode(GL_MODELVIEW)
 end
 
-def keyboard 
+def keyPressed(key,x ,y)
     case (key)
         when ESCAPE
         exit 0
@@ -95,24 +95,46 @@ def keyboard
     end
 end
 
-def glinit(string)
-  # Initialize glut & open a window
+def init(string)
+  #Initialize GLUT state - glut will take any command line arguments that pertain
+  # to it or X Windows - look at its documentation at 
+  # http://reality.sgi.com/mjk/spec3/spec3.html 
   glutInit(MemoryPointer.new(:int, 1).put_int(0, 0), 
            MemoryPointer.new(:pointer, 1).put_pointer(0, nil))
-  glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH)
-  glutInitWindowSize(@width, @height)
+  # Double buffer 
+  # RGBA color
+  # Alpha components supported 
+  # Depth buffer 
+  glutInitDisplayMode(GLUT_RGBA|GLUT_DOUBLE|GLUT_ALPHA|GLUT_DEPTH)
+
+  # get a 640x480 window
+  glutInitWindowSize(640,480)
+
+  # the window starts at the upper left corner of the screen
+  glutInitWindowPosition(0,0)
+
+  # Open a window
   glutCreateWindow(string)
 end
 
-def glcallbacks
-  glutReshapeFunc(method(:reshape).to_proc)
-  glutDisplayFunc(method(:display).to_proc)
-  glutKeyboardFunc(method(:keyboard).to_proc)
+def callbacks
+  # Register the function to do all our OpenGL drawing.
+  glutDisplayFunc(method(:DrawGLScene).to_proc)
+
+  # Even if there are no events, redraw our gl scene.
+  glutIdleFunc(method(:DrawGLScene).to_proc)
+
+  # Register the function called when our window is resized.
+  glutReshapeFunc(method(:ReSizeGLScene).to_proc)
+
+  # Register the function called when the keyboard is pressed.
+  glutKeyboardFunc(method(:keyPressed).to_proc)
 end
 
+
 if __FILE__ == $0
-  glinit($0)
-  glcallbacks
+  init($0)
+  callbacks
   glutMainLoop()
 end
 
